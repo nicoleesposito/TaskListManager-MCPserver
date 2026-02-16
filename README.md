@@ -22,14 +22,14 @@ Prerequisites include:
 (4). node index.js
 
 ## Usage Examples
-(1). Add a Task - Create a new task with a title and description
-"Create a task titled "Install dependencies" with content "Run npm install and verify build""
+(1). Add a Task - Create a new task with a title and description  
+"Create a task titled "Install dependencies" with content "Run npm install and verify build""  
 
-(2). List Tasks - View all exisiting tasks
-"List all tasks"
+(2). List Tasks - View all exisiting tasks  
+"List all tasks"  
 
-(3). Complete a Task - Mark an exisiting task as completed
-"Mark "Install dependencies" as completed"
+(3). Complete a Task - Mark an exisiting task as completed  
+"Mark "Install dependencies" as completed"  
 
 ## Limitations or known issues
 Some limitations of this MCP server include:
