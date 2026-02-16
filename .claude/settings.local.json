@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(timeout 3 node:*)",
+      "Bash(node:*)",
+      "mcp__task-list-manager__list_tasks",
+      "mcp__task-list-manager__add_task",
+      "mcp__task-list-manager__complete_task"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "task-list-manager"
+  ]
+}

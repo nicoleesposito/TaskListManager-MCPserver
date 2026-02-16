@@ -1,0 +1,97 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "MCP Server Walkthrough",
+  "description": "A guided tour of the Task List Manager MCP server — how it initializes, registers tools, writes files to disk, and communicates over stdio.",
+  "steps": [
+    {
+      "file": "task-list-manager-server/package.json",
+      "line": 8,
+      "title": "1. Entry point — package.json",
+      "description": "Everything starts here. The key dependency is `@modelcontextprotocol/sdk` — this is the official MCP SDK that provides `McpServer` and `StdioServerTransport`. The `\"type\": \"module\"` field enables ES module `import` syntax throughout the project."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 4,
+      "title": "2. Imports — what the SDK provides",
+      "description": "Two imports from the MCP SDK power the entire server:\n\n- **McpServer** — the core class that handles tool registration, resource registration, and the MCP protocol lifecycle.\n- **StdioServerTransport** — a transport layer that reads/writes JSON-RPC messages over stdin/stdout, which is how Claude Code communicates with MCP servers.\n\nWe also import `zod` (bundled with the SDK) for parameter validation, and Node.js built-ins for file I/O."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 12,
+      "title": "3. Configuration — task storage directory",
+      "description": "All tasks are stored as `.md` files in `~/task-list/`. We use `os.homedir()` so this works on any OS. This single constant defines where every tool reads from and writes to."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 15,
+      "title": "4. Helper — slugify()",
+      "description": "Converts human-readable titles into safe filenames:\n\n`\"Project Ideas\"` → `\"project-ideas.md\"`\n\nIt lowercases, replaces non-alphanumeric characters with hyphens, trims extra hyphens, and appends `.md`. Every tool that works with task files uses this to map titles to filenames."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 26,
+      "title": "5. Helper — ensureTaskDir()",
+      "description": "`fs.mkdir` with `{ recursive: true }` creates `~/task-list/` if it doesn't exist, and does nothing if it already does. Every tool calls this before any file operation so the server never crashes on a missing directory."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 32,
+      "title": "6. Server initialization",
+      "description": "This creates the MCP server instance. The `name` and `version` are sent to the client (Claude Code) during the MCP handshake so it knows what server it's talking to.\n\nAt this point the server exists but has no tools or resources — those are registered next via `server.tool()` and `server.resource()` calls."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 40,
+      "title": "7. Tool registration — add_task",
+      "description": "`server.tool()` is how you register a tool with the MCP server. It takes four arguments:\n\n1. **Name** (`\"add_task\"`) — the identifier Claude sees and calls.\n2. **Description** — tells Claude when/why to use this tool.\n3. **Schema** — a Zod object defining the parameters. The SDK automatically converts this into a JSON Schema for the MCP protocol. Here we require `title` (string) and `content` (string).\n4. **Handler** — the async function that runs when the tool is called.\n\nEvery tool follows this same four-argument pattern."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 50,
+      "title": "8. How add_task creates files on disk",
+      "description": "This is the core file-creation logic:\n\n1. **Slugify the title** → `\"Project Ideas\"` becomes `\"project-ideas.md\"`\n2. **Build the full path** → `~/task-list/project-ideas.md`\n3. **Compose markdown** — a structured format with an `# H1` title, a `**Status:** pending` line, a horizontal rule, and then the user's content.\n4. **Write to disk** — `fs.writeFile` creates (or overwrites) the file.\n\nThe status line is important — `complete_task` later searches for `**Status:** pending` to flip it to `completed`."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 58,
+      "title": "9. MCP response format",
+      "description": "Every tool handler must return an object with a `content` array. Each item has a `type` (usually `\"text\"`) and the data. This is the MCP protocol's standard response format — the SDK serializes it into a JSON-RPC response and sends it back to Claude Code over stdio.\n\nYou can return multiple content blocks (e.g., text + images), but for simple tools one text block is typical."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 72,
+      "title": "10. Tool registration — list_tasks",
+      "description": "Same `server.tool()` pattern, but with an empty schema `{}` since this tool takes no parameters. The handler reads the `~/task-list/` directory, filters for `.md` files, and builds a formatted summary.\n\nNotice the use of `Promise.all` with `.map()` — this reads all files in parallel for better performance."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 98,
+      "title": "11. Parsing task metadata from markdown",
+      "description": "Since we store tasks as plain markdown (not a database), we parse metadata with regex:\n\n- `^# (.+)$` extracts the title from the H1 heading\n- `\\*\\*Status:\\*\\* (\\w+)` extracts the status (pending/completed)\n- `stat.mtime` gives us the last-modified date from the filesystem\n\nThis is a simple but effective pattern — the markdown files are both human-readable *and* machine-parseable."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 119,
+      "title": "12. Tool registration — complete_task",
+      "description": "The third tool follows the same registration pattern. It takes only a `title` parameter, finds the matching file via `slugify()`, and does a string replacement to change the status.\n\nNote the error handling: `fs.access()` checks if the file exists before reading. If not found, it returns a friendly error message instead of throwing."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 147,
+      "title": "13. How complete_task modifies files",
+      "description": "The completion logic is a simple `String.replace()`:\n\n```\n**Status:** pending  →  **Status:** completed\n```\n\nThis works because `add_task` always writes the status in this exact format. The modified content is written back to the same file path, so the task stays in place — only its status changes."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 168,
+      "title": "14. Resource registration",
+      "description": "`server.resource()` exposes read-only data that clients can fetch without invoking a tool. It takes:\n\n1. **Name** (`\"task-list\"`) — identifier for the resource\n2. **URI** (`\"task-list://current\"`) — the address clients use to read it\n3. **Options** — metadata like a description\n4. **Handler** — returns the resource contents\n\nResources differ from tools: tools *do things* (side effects), resources *provide data* (read-only). Claude Code can read this resource to get a quick overview without calling `list_tasks`."
+    },
+    {
+      "file": "task-list-manager-server/index.js",
+      "line": 219,
+      "title": "15. Stdio transport — how the server communicates",
+      "description": "This is the final piece that ties everything together:\n\n1. **`new StdioServerTransport()`** — creates a transport that reads JSON-RPC messages from **stdin** and writes responses to **stdout**. This is the standard way MCP servers communicate with Claude Code.\n\n2. **`server.connect(transport)`** — wires the transport to the server. From this point on, the server listens for incoming tool calls and resource reads.\n\n3. **`console.error()`** — we log to **stderr** (not stdout!) because stdout is reserved for MCP protocol messages. Any `console.log()` would corrupt the protocol stream.\n\nWhen Claude Code launches this server, it spawns `node index.js` as a child process and communicates over the stdin/stdout pipe."
+    }
+  ]
+}
