@@ -16,10 +16,10 @@ Prerequisites include:
 - npm
 - MCP-compatible client
 
-(1). Run: git clone https://github.com/nicoleesposito/TaskListManager-MCPserver.git
-(2). cd TaskListManager-MCPserver
-(3). npm install
-(4). node index.js
+(1). Run: git clone https://github.com/nicoleesposito/TaskListManager-MCPserver.git <br>
+(2). cd TaskListManager-MCPserver <br>
+(3). npm install <br>
+(4). node index.js <br>
 
 ## Usage Examples
 (1). Add a Task - Create a new task with a title and description <br>
