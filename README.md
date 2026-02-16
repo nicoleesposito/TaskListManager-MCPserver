@@ -22,13 +22,13 @@ Prerequisites include:
 (4). node index.js
 
 ## Usage Examples
-(1). Add a Task - Create a new task with a title and description  
+(1). Add a Task - Create a new task with a title and description <br>
 "Create a task titled "Install dependencies" with content "Run npm install and verify build""  
 
-(2). List Tasks - View all exisiting tasks  
+(2). List Tasks - View all exisiting tasks <br>
 "List all tasks"  
 
-(3). Complete a Task - Mark an exisiting task as completed  
+(3). Complete a Task - Mark an exisiting task as completed <br>
 "Mark "Install dependencies" as completed"  
 
 ## Limitations or known issues
